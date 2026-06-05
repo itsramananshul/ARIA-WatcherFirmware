@@ -75,3 +75,7 @@ esp_err_t app_audio_recorder_stream_stop(void);
 
 esp_err_t app_audio_recorder_file_start(void *p_filepath);
 esp_err_t app_audio_recorder_file_end(void);
+
+// ARIA: hands-free wake word ("Sophia") on/off, persisted in NVS "aria_ww_en".
+void app_audio_recorder_set_wakeword(bool enabled);
+bool app_audio_recorder_wakeword_enabled(void);

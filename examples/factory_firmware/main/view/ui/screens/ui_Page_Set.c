@@ -350,7 +350,7 @@ void ui_Page_Set_screen_init(void)
     lv_obj_set_x(ui_setwwt, 50);
     lv_obj_set_y(ui_setwwt, 0);
     lv_obj_set_align(ui_setwwt, LV_ALIGN_LEFT_MID);
-    lv_label_set_text(ui_setwwt, "Fast Voice");
+    lv_label_set_text(ui_setwwt, "Wake Word");
     lv_obj_set_style_text_color(ui_setwwt, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_opa(ui_setwwt, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_font(ui_setwwt, &lv_font_montserrat_24, LV_PART_MAIN | LV_STATE_DEFAULT);

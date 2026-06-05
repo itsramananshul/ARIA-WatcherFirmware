@@ -18,6 +18,7 @@
 #include "app_device_info.h"         // get_local_service_cfg_type1
 #include "app_voice_interaction.h"   // app_vi_session_is_running
 #include "app_recording.h"           // app_recording_start/stop
+#include "app_audio_recorder.h"      // ARIA: wake-word toggle setter
 #include "app_aria_cam.h"            // aria_cam_capture (take_photo)
 #include "app_audio_player.h"        // play WAV (speak)
 #include "factory_info.h"
@@ -98,6 +99,9 @@ static void apply_config(cJSON *config)
     if (rc) { uint8_t on = cJSON_IsTrue(rc) ? 1 : 0; storage_write("aria_rec_en", &on, sizeof(on)); }
     cJSON *cl = cJSON_GetObjectItem(config, "chat_logging");
     if (cl) { uint8_t on = cJSON_IsTrue(cl) ? 1 : 0; storage_write("aria_chat_en", &on, sizeof(on)); }
+    // ARIA: hands-free wake word ("Sophia") — apply live (also persists to NVS).
+    cJSON *ww = cJSON_GetObjectItem(config, "wake_word");
+    if (ww) { app_audio_recorder_set_wakeword(cJSON_IsTrue(ww)); }
 
     s_applied_rev = cur_rev;
 }

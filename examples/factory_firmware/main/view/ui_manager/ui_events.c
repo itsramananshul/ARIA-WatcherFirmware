@@ -20,6 +20,7 @@
 #include "app_ble.h"
 #include "app_wifi.h"
 #include "storage.h"
+#include "app_audio_recorder.h"   // ARIA: wake-word toggle setter
 #include "app_png.h"
 #include "app_rgb.h"
 #include "sensecap-watcher.h"
@@ -1051,13 +1052,14 @@ void setbridf_cb(lv_event_t *e)
 void setwwf_cb(lv_event_t *e)
 {
     set_obj_style_focused(ui_setww, ui_setwwt);
-    // ARIA: reflect the saved TTS-engine setting on the switch when focused.
-    uint8_t eng = 0; size_t len = sizeof(eng);
-    char key[] = "aria_eng";
-    if (storage_read(key, &eng, &len) == ESP_OK && eng) {
-        lv_obj_add_state(ui_setwwsw, LV_STATE_CHECKED);
-    } else {
+    // ARIA: reflect the saved hands-free wake-word setting on the switch.
+    // Default ON (checked) when never set.
+    uint8_t en = 1; size_t len = sizeof(en);
+    char key[] = "aria_ww_en";
+    if (storage_read(key, &en, &len) == ESP_OK && en == 0) {
         lv_obj_clear_state(ui_setwwsw, LV_STATE_CHECKED);
+    } else {
+        lv_obj_add_state(ui_setwwsw, LV_STATE_CHECKED);
     }
     lv_obj_clear_flag(ui_setwwsw, LV_OBJ_FLAG_HIDDEN);
 }
@@ -1205,19 +1207,18 @@ void setrgbc_cb(lv_event_t *e)
 void setwwc_cb(lv_event_t *e)
 {
     ESP_LOGI(CLICK_TAG, "setwwc_cb");
-    // ARIA: repurposed Wake-Word switch as the TTS engine toggle.
-    // checked = Fast (Gemini Live -> x-aria-engine:live); unchecked = Current.
-    uint8_t eng;
+    // ARIA: hands-free wake word ("Sophia") on/off. checked = listening.
+    bool en;
     if (lv_obj_has_state(ui_setwwsw, LV_STATE_CHECKED)) {
         lv_obj_clear_state(ui_setwwsw, LV_STATE_CHECKED);
-        eng = 0;
+        en = false;
     } else {
         lv_obj_add_state(ui_setwwsw, LV_STATE_CHECKED);
-        eng = 1;
+        en = true;
     }
-    char key[] = "aria_eng";
-    storage_write(key, &eng, sizeof(eng));
-    ESP_LOGI(CLICK_TAG, "ARIA engine -> %s", eng ? "fast(live)" : "current");
+    // Persists to NVS "aria_ww_en" AND flips the live recorder flag immediately.
+    app_audio_recorder_set_wakeword(en);
+    ESP_LOGI(CLICK_TAG, "ARIA wake word -> %s", en ? "ON" : "OFF");
 }
 
 void setdownc_cb(lv_event_t *e)

@@ -8,6 +8,7 @@
 #include "util.h"
 #include "data_defs.h"
 #include "event_loops.h"
+#include "storage.h"   // ARIA: wake-word on/off toggle
 
 #ifdef CONFIG_ENABLE_VI_SR
 #include "esp_mn_speech_commands.h"
@@ -23,6 +24,30 @@
 static const char *TAG = "audio_recorder";
 
 struct app_audio_recorder *gp_audio_recorder = NULL;
+
+// ARIA: hands-free wake word ("Sophia"). When off, the wheel still works but
+// saying the word does nothing. Default on; persisted in NVS "aria_ww_en".
+static volatile bool s_ww_enabled = true;
+
+void app_audio_recorder_set_wakeword(bool enabled)
+{
+    s_ww_enabled = enabled;
+    uint8_t v = enabled ? 1 : 0;
+    storage_write("aria_ww_en", &v, sizeof(v));
+    ESP_LOGI(TAG, "wake word -> %s", enabled ? "ON" : "OFF");
+}
+
+bool app_audio_recorder_wakeword_enabled(void)
+{
+    return s_ww_enabled;
+}
+
+static void __ww_load_nvs(void)
+{
+    uint8_t v = 1; size_t len = sizeof(v);
+    if (storage_read("aria_ww_en", &v, &len) == ESP_OK) s_ww_enabled = (v != 0);
+    else s_ww_enabled = true;   // default on
+}
 
 #define EVENT_RECORD_STREAM_START      BIT0
 #define EVENT_RECORD_STREAM_STOP       BIT1
@@ -107,9 +132,11 @@ static void app_audio_detect_task(void *p_arg)
             continue;
         }
         if (res->wakeup_state == WAKENET_DETECTED) {
-            ESP_LOGI(TAG, LOG_BOLD(LOG_COLOR_GREEN) "wakeword detected");
-            esp_event_post_to(app_event_loop_handle, CTRL_EVENT_BASE, \
-                        CTRL_EVENT_VI_RECORD_WAKEUP, NULL, NULL, pdMS_TO_TICKS(10000));
+            if (s_ww_enabled) {   // ARIA: only wake hands-free when the toggle is on
+                ESP_LOGI(TAG, LOG_BOLD(LOG_COLOR_GREEN) "wakeword detected");
+                esp_event_post_to(app_event_loop_handle, CTRL_EVENT_BASE, \
+                            CTRL_EVENT_VI_RECORD_WAKEUP, NULL, NULL, pdMS_TO_TICKS(10000));
+            }
         } else if (res->wakeup_state == WAKENET_CHANNEL_VERIFIED || p_audio_recorder->manul_detect_flag) {
             detect_flag = true;
             if (p_audio_recorder->manul_detect_flag) {
@@ -190,6 +217,7 @@ esp_err_t app_audio_recorder_init(void)
 
     esp_err_t ret = ESP_OK;
     struct app_audio_recorder * p_audio_recorder = NULL;
+    __ww_load_nvs();   // ARIA: restore hands-free wake-word on/off setting
     gp_audio_recorder = (struct app_audio_recorder *) psram_malloc(sizeof(struct app_audio_recorder));
     if (gp_audio_recorder == NULL)
     {
