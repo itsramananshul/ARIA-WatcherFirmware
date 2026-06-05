@@ -18,6 +18,8 @@
 #include "app_device_info.h"         // get_local_service_cfg_type1
 #include "app_voice_interaction.h"   // app_vi_session_is_running
 #include "app_recording.h"           // app_recording_start/stop
+#include "app_aria_cam.h"            // aria_cam_capture (take_photo)
+#include "app_audio_player.h"        // play WAV (speak)
 #include "factory_info.h"
 #include "event_loops.h"
 #include "data_defs.h"
@@ -111,6 +113,103 @@ static void add_result(long long id, const char *status)
 
 static bool s_reboot_pending = false;
 
+// Capture a frame and POST it to the backend photos/ gallery.
+static bool cmd_take_photo(void)
+{
+    char *b64 = NULL;
+    int b64len = 0;
+    if (aria_cam_capture(&b64, &b64len, 8000) != ESP_OK || !b64 || b64len <= 0) {
+        if (b64) free(b64);
+        return false;
+    }
+    char host[176], token[176];
+    if (get_host_token(host, sizeof(host), token, sizeof(token)) != ESP_OK) { free(b64); return false; }
+    char url[224];
+    snprintf(url, sizeof(url), "%s/photo", host);
+
+    esp_http_client_config_t cfg = { .url = url, .method = HTTP_METHOD_POST, .timeout_ms = 30000, .crt_bundle_attach = esp_crt_bundle_attach };
+    esp_http_client_handle_t cl = esp_http_client_init(&cfg);
+    if (!cl) { free(b64); return false; }
+    esp_http_client_set_header(cl, "Content-Type", "application/octet-stream");
+    if (token[0]) esp_http_client_set_header(cl, "Authorization", token);
+    const char *eui = factory_info_eui_get();
+    if (eui) esp_http_client_set_header(cl, "API-OBITER-DEVICE-EUI", eui);
+    esp_http_client_set_header(cl, "x-aria-label", "photo");
+
+    int status = -1;
+    if (esp_http_client_open(cl, b64len) == ESP_OK && esp_http_client_write(cl, b64, b64len) == b64len) {
+        esp_http_client_fetch_headers(cl);
+        status = esp_http_client_get_status_code(cl);
+    }
+    esp_http_client_close(cl);
+    esp_http_client_cleanup(cl);
+    free(b64);
+    ESP_LOGI(TAG, "take_photo -> %d", status);
+    return status == 200;
+}
+
+// Play a complete WAV buffer through the audio stream player.
+static void play_wav(uint8_t *wav, size_t len)
+{
+    app_audio_player_stream_init(len);
+    size_t off = 0;
+    const size_t chunk = 8192;
+    bool started = false;
+    while (off < len) {
+        size_t n = (len - off) > chunk ? chunk : (len - off);
+        app_audio_player_stream_send(wav + off, n, pdMS_TO_TICKS(20000));
+        off += n;
+        if (!started && off >= 16000) { app_audio_player_stream_start(); started = true; }
+    }
+    if (!started) app_audio_player_stream_start();
+    app_audio_player_stream_finish();
+    while (app_audio_player_status_get() == AUDIO_PLAYER_STATUS_PLAYING_STREAM) {
+        vTaskDelay(pdMS_TO_TICKS(20));
+    }
+}
+
+// Fetch TTS for `text` from the backend and play it out loud.
+static bool cmd_speak(const char *text)
+{
+    if (!text || !text[0]) return false;
+    char host[176], token[176];
+    if (get_host_token(host, sizeof(host), token, sizeof(token)) != ESP_OK) return false;
+    char url[224];
+    snprintf(url, sizeof(url), "%s/speak", host);
+
+    cJSON *j = cJSON_CreateObject();
+    cJSON_AddStringToObject(j, "text", text);
+    char *body = cJSON_PrintUnformatted(j);
+    cJSON_Delete(j);
+    if (!body) return false;
+
+    esp_http_client_config_t cfg = { .url = url, .method = HTTP_METHOD_POST, .timeout_ms = 30000, .crt_bundle_attach = esp_crt_bundle_attach };
+    esp_http_client_handle_t cl = esp_http_client_init(&cfg);
+    if (!cl) { free(body); return false; }
+    esp_http_client_set_header(cl, "Content-Type", "application/json");
+    if (token[0]) esp_http_client_set_header(cl, "Authorization", token);
+
+    bool ok = false;
+    if (esp_http_client_open(cl, strlen(body)) == ESP_OK && esp_http_client_write(cl, body, strlen(body)) >= 0) {
+        int clen = esp_http_client_fetch_headers(cl);
+        int status = esp_http_client_get_status_code(cl);
+        if (status == 200 && clen > 44) {
+            uint8_t *wav = heap_caps_malloc(clen, MALLOC_CAP_SPIRAM);
+            if (wav) {
+                int total = 0, rd;
+                while (total < clen && (rd = esp_http_client_read(cl, (char *)wav + total, clen - total)) > 0) total += rd;
+                if (total > 44) { play_wav(wav, total); ok = true; }
+                free(wav);
+            }
+        }
+        ESP_LOGI(TAG, "speak -> http %d, %d bytes", status, clen);
+    }
+    esp_http_client_close(cl);
+    esp_http_client_cleanup(cl);
+    free(body);
+    return ok;
+}
+
 static void run_commands(cJSON *commands)
 {
     cJSON *cmd = NULL;
@@ -131,6 +230,12 @@ static void run_commands(cJSON *commands)
         } else if (strcmp(name, "record_stop") == 0) {
             esp_err_t r = app_recording_stop();
             add_result(id, r == ESP_OK ? "done" : "failed");
+        } else if (strcmp(name, "take_photo") == 0) {
+            add_result(id, cmd_take_photo() ? "done" : "failed");
+        } else if (strcmp(name, "speak") == 0) {
+            cJSON *args = cJSON_GetObjectItem(cmd, "args");
+            cJSON *txt = args ? cJSON_GetObjectItem(args, "text") : NULL;
+            add_result(id, cmd_speak((txt && cJSON_IsString(txt)) ? txt->valuestring : "") ? "done" : "failed");
         } else {
             add_result(id, "failed");   // unknown command
         }

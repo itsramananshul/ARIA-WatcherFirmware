@@ -19,6 +19,7 @@
 #include "app_device_info.h"         // get_local_service_cfg_type1, CFG_ITEM..., MAX_CALLER
 #include "app_voice_interaction.h"   // app_vi_session_is_running
 #include "factory_info.h"            // factory_info_eui_get
+#include "storage.h"                 // aria_rec_en feature toggle
 #include "event_loops.h"
 #include "data_defs.h"
 
@@ -305,6 +306,10 @@ bool app_recording_is_active(void)
 esp_err_t app_recording_start(void)
 {
     if (app_recording_is_active()) return ESP_ERR_INVALID_STATE;
+    // Feature toggle from the web Control panel (default on).
+    uint8_t rec_en = 1; size_t rl = sizeof(rec_en);
+    storage_read("aria_rec_en", &rec_en, &rl);
+    if (rec_en == 0) { set_state(REC_ERR, "Recording disabled"); return ESP_FAIL; }
     if (app_vi_session_is_running()) { set_state(REC_ERR, "Busy (voice)"); return ESP_FAIL; }
     s_stop_req = false;
     s_elapsed_ms_final = 0;
