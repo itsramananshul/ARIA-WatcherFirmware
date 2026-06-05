@@ -33,6 +33,7 @@
 #include "app_sensor.h"
 #include "app_aria_cam.h"
 #include "app_recording.h"
+#include "app_device_sync.h"
 
 #include "app_audio_player.h"
 #include "app_audio_recorder.h"
@@ -185,6 +186,7 @@ void app_init(void)
     app_sensor_init();
     app_aria_cam_init();
     app_recording_init();
+    app_device_sync_init();
 }
 
 void task_app_init(void *p_arg)
