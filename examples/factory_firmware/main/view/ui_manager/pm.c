@@ -128,7 +128,7 @@ void initGroup()
     lv_obj_t * notask_objects[]         = {ui_curtask1b};
     lv_obj_t * extension_objects[]      = {ui_extensionbubble2, ui_extensionbubble3, ui_extensionbubble4};
     lv_obj_t * set_objects[]            = {ui_setback, ui_setdown, ui_setapp, ui_setwifi, ui_setble, ui_setvol, ui_setbri,ui_settime,
-                                        ui_setrgb, ui_setww,ui_setdev, ui_setfac};
+                                        ui_setrgb, ui_setww, ui_seteng, ui_setdev, ui_setfac};
     lv_obj_t * view_objects[]           = {ui_Page_ViewAva, ui_Page_ViewLive};
     lv_obj_t * brightness_objects[]     = {ui_bslider, ui_bvback};
     lv_obj_t * volume_objects[]         = {ui_vslider, ui_bvback};

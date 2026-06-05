@@ -374,6 +374,47 @@ void ui_Page_Set_screen_init(void)
     lv_obj_set_style_pad_top(ui_setwwsw, 0, LV_PART_KNOB | LV_STATE_CHECKED);
     lv_obj_set_style_pad_bottom(ui_setwwsw, 0, LV_PART_KNOB | LV_STATE_CHECKED);
 
+    // ARIA: new "Fast Voice" (TTS engine) row — added without removing any row.
+    ui_seteng = lv_obj_create(ui_Set_panel);
+    lv_obj_set_width(ui_seteng, 412);
+    lv_obj_set_height(ui_seteng, 50);
+    lv_obj_set_align(ui_seteng, LV_ALIGN_CENTER);
+    lv_obj_add_flag(ui_seteng, LV_OBJ_FLAG_SCROLL_ON_FOCUS);
+    lv_obj_clear_flag(ui_seteng, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_set_style_radius(ui_seteng, 45, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_color(ui_seteng, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(ui_seteng, 120, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_grad_color(ui_seteng, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_main_stop(ui_seteng, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_grad_stop(ui_seteng, 200, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_grad_dir(ui_seteng, LV_GRAD_DIR_HOR, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_border_color(ui_seteng, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_border_opa(ui_seteng, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    ui_setengt = lv_label_create(ui_seteng);
+    lv_obj_set_width(ui_setengt, LV_SIZE_CONTENT);
+    lv_obj_set_height(ui_setengt, LV_SIZE_CONTENT);
+    lv_obj_set_x(ui_setengt, 50);
+    lv_obj_set_y(ui_setengt, 0);
+    lv_obj_set_align(ui_setengt, LV_ALIGN_LEFT_MID);
+    lv_label_set_text(ui_setengt, "Fast Voice");
+    lv_obj_set_style_text_color(ui_setengt, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_opa(ui_setengt, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(ui_setengt, &lv_font_montserrat_24, LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    ui_setengsw = lv_switch_create(ui_seteng);
+    lv_obj_set_width(ui_setengsw, 60);
+    lv_obj_set_height(ui_setengsw, 25);
+    lv_obj_set_x(ui_setengsw, 140);
+    lv_obj_set_y(ui_setengsw, 0);
+    lv_obj_set_align(ui_setengsw, LV_ALIGN_CENTER);
+    lv_obj_set_style_bg_color(ui_setengsw, lv_color_hex(0x8FC31F), LV_PART_MAIN | LV_STATE_CHECKED);
+    lv_obj_set_style_bg_opa(ui_setengsw, 50, LV_PART_MAIN | LV_STATE_CHECKED);
+    lv_obj_set_style_bg_color(ui_setengsw, lv_color_hex(0x8FC31F), LV_PART_INDICATOR | LV_STATE_CHECKED);
+    lv_obj_set_style_bg_opa(ui_setengsw, 50, LV_PART_INDICATOR | LV_STATE_CHECKED);
+    lv_obj_set_style_bg_color(ui_setengsw, lv_color_hex(0x8FC31F), LV_PART_KNOB | LV_STATE_CHECKED);
+    lv_obj_set_style_bg_opa(ui_setengsw, 255, LV_PART_KNOB | LV_STATE_CHECKED);
+
     ui_setdev = lv_obj_create(ui_Set_panel);
     lv_obj_set_width(ui_setdev, 412);
     lv_obj_set_height(ui_setdev, 50);
@@ -473,6 +514,7 @@ void ui_Page_Set_screen_init(void)
     lv_obj_add_event_cb(ui_settime, ui_event_settime, LV_EVENT_ALL, NULL);
     lv_obj_add_event_cb(ui_setrgb, ui_event_setrgb, LV_EVENT_ALL, NULL);
     lv_obj_add_event_cb(ui_setww, ui_event_setww, LV_EVENT_ALL, NULL);
+    lv_obj_add_event_cb(ui_seteng, ui_event_seteng, LV_EVENT_ALL, NULL);
     lv_obj_add_event_cb(ui_setdev, ui_event_setdev, LV_EVENT_ALL, NULL);
     lv_obj_add_event_cb(ui_setfac, ui_event_setfac, LV_EVENT_ALL, NULL);
     lv_obj_add_event_cb(ui_Page_Set, ui_event_Page_Set, LV_EVENT_ALL, NULL);
