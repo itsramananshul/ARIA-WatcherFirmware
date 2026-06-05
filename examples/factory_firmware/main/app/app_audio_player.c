@@ -572,6 +572,15 @@ esp_err_t app_audio_player_stop(void)
     if( p_audio_player == NULL) {
         return ESP_FAIL;
     }
+    int st = p_audio_player->status;
+    // ARIA FIX: a FILE/MEM playback (the "thinking" tone) runs on the audio_player
+    // component and MUST be halted with audio_player_stop() — the stream-stop event
+    // alone leaves it decoding into I2S, which then overlaps + corrupts the reply
+    // stream (background noise, clipped first words, stream_init errors).
+    if (st == AUDIO_PLAYER_STATUS_PLAYING_FILE || st == AUDIO_PLAYER_STATUS_PLAYING_MEM) {
+        audio_player_stop();
+        vTaskDelay(pdMS_TO_TICKS(60));   // let the decode task exit + I2S drain before the reply
+    }
     __data_lock(p_audio_player);
     if( p_audio_player->status != AUDIO_PLAYER_STATUS_IDLE) {
         xEventGroupSetBits(p_audio_player->event_group, EVENT_STREAM_STOP); // TODO
