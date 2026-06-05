@@ -33,7 +33,6 @@
 #include "app_sensor.h"
 #include "app_aria_cam.h"
 #include "app_recording.h"
-#include "app_aria_tone.h"
 #include "app_device_sync.h"
 
 #include "app_audio_player.h"
@@ -187,7 +186,6 @@ void app_init(void)
     app_sensor_init();
     app_aria_cam_init();
     app_recording_init();
-    aria_tone_init();           // ARIA: load selected "thinking" tone
     app_device_sync_init();
 }
 

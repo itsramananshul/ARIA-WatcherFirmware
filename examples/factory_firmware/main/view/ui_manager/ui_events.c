@@ -1378,12 +1378,6 @@ void sleepswitch_cb(lv_event_t * e)
 
 void p2tclick_cb(lv_event_t * e)
 {
-    // ARIA: only the WHEEL (encoder press) may stop/exit a conversation.
-    // Ignore touchscreen taps so an accidental tap never kills the chat.
-    lv_indev_t *p2t_indev = lv_indev_get_act();
-    if (p2t_indev && lv_indev_get_type(p2t_indev) != LV_INDEV_TYPE_ENCODER) {
-        return;
-    }
     if(g_push2talk_status == EMOJI_SPEAKING || g_push2talk_status == EMOJI_ANALYZING){
         app_rgb_set(SR, RGB_BLINK_BLUE);
         lv_arc_set_value(ui_push2talkarc, 0);
