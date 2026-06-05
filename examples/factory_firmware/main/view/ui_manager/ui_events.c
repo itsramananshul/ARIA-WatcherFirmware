@@ -1221,43 +1221,6 @@ void setwwc_cb(lv_event_t *e)
     ESP_LOGI(CLICK_TAG, "ARIA wake word -> %s", en ? "ON" : "OFF");
 }
 
-// ARIA: "Fast Voice" TTS-engine row (its own Settings row, restored). checked =
-// Fast (Gemini Live -> ?engine=live); unchecked = Current. NVS key "aria_eng".
-void setengf_cb(lv_event_t *e)
-{
-    set_obj_style_focused(ui_seteng, ui_setengt);
-    uint8_t eng = 0; size_t len = sizeof(eng);
-    char key[] = "aria_eng";
-    if (storage_read(key, &eng, &len) == ESP_OK && eng) {
-        lv_obj_add_state(ui_setengsw, LV_STATE_CHECKED);
-    } else {
-        lv_obj_clear_state(ui_setengsw, LV_STATE_CHECKED);
-    }
-    lv_obj_clear_flag(ui_setengsw, LV_OBJ_FLAG_HIDDEN);
-}
-
-void setengdf_cb(lv_event_t *e)
-{
-    set_obj_style_defocused(ui_seteng, ui_setengt);
-    lv_obj_add_flag(ui_setengsw, LV_OBJ_FLAG_HIDDEN);
-}
-
-void setengc_cb(lv_event_t *e)
-{
-    ESP_LOGI(CLICK_TAG, "setengc_cb");
-    uint8_t eng;
-    if (lv_obj_has_state(ui_setengsw, LV_STATE_CHECKED)) {
-        lv_obj_clear_state(ui_setengsw, LV_STATE_CHECKED);
-        eng = 0;
-    } else {
-        lv_obj_add_state(ui_setengsw, LV_STATE_CHECKED);
-        eng = 1;
-    }
-    char key[] = "aria_eng";
-    storage_write(key, &eng, sizeof(eng));
-    ESP_LOGI(CLICK_TAG, "ARIA engine -> %s", eng ? "fast(live)" : "current");
-}
-
 void setdownc_cb(lv_event_t *e)
 {
     ESP_LOGI(CLICK_TAG, "setdownc_cb");

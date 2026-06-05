@@ -240,10 +240,6 @@ void ui_event_setww(lv_event_t * e);
 lv_obj_t * ui_setww;
 lv_obj_t * ui_setwwt;
 lv_obj_t * ui_setwwsw;
-void ui_event_seteng(lv_event_t * e);
-lv_obj_t * ui_seteng;
-lv_obj_t * ui_setengt;
-lv_obj_t * ui_setengsw;
 void ui_event_setdev(lv_event_t * e);
 lv_obj_t * ui_setdev;
 lv_obj_t * ui_setdevt;
@@ -1276,19 +1272,6 @@ void ui_event_setww(lv_event_t * e)
     }
     if(event_code == LV_EVENT_DEFOCUSED) {
         setwwdf_cb(e);
-    }
-}
-void ui_event_seteng(lv_event_t * e)
-{
-    lv_event_code_t event_code = lv_event_get_code(e);
-    if(event_code == LV_EVENT_CLICKED) {
-        setengc_cb(e);
-    }
-    if(event_code == LV_EVENT_FOCUSED) {
-        setengf_cb(e);
-    }
-    if(event_code == LV_EVENT_DEFOCUSED) {
-        setengdf_cb(e);
     }
 }
 void ui_event_setdev(lv_event_t * e)
