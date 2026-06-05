@@ -226,7 +226,12 @@ static void sync_task(void *arg)
         if (s_wifi_connected && !app_vi_session_is_running()) {
             sync_once();
             if (s_reboot_pending) {
-                ESP_LOGW(TAG, "reboot command -> restarting");
+                // CRITICAL: report the reboot result FIRST (a second sync POSTs
+                // the pending {id,done} so the backend marks it done) — otherwise
+                // it stays 'pending' and we reboot-loop after every restart.
+                s_reboot_pending = false;
+                sync_once();
+                ESP_LOGW(TAG, "reboot command acknowledged -> restarting");
                 vTaskDelay(pdMS_TO_TICKS(500));
                 esp_restart();
             }
