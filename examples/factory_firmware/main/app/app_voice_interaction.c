@@ -16,6 +16,7 @@
 #include "uuid.h"
 #include "app_audio_player.h"
 #include "app_audio_recorder.h"
+#include "app_aria_tone.h"
 #include "app_rgb.h"
 #include "factory_info.h"
 #include "app_device_info.h"
@@ -751,6 +752,7 @@ static void __status_machine_handle(struct app_voice_interaction *p_vi)
 
         case VI_STATUS_ANALYZING: {
             ESP_LOGI(TAG, "VI_STATUS_ANALYZING");
+            aria_tone_play();   // ARIA: play the "thinking" tone while we wait for the reply
             enum app_voice_interaction_status next_status = VI_STATUS_PLAYING;
             int64_t start = 0, end = 0;
             esp_http_client_handle_t client = p_vi->client;
@@ -793,6 +795,7 @@ static void __status_machine_handle(struct app_voice_interaction *p_vi)
 
         case VI_STATUS_PLAYING: {
             ESP_LOGI(TAG, "VI_STATUS_PLAYING");
+            aria_tone_stop();   // ARIA: stop the "thinking" tone before her reply plays
 
             enum app_voice_interaction_status next_status = VI_STATUS_FINISH;
             int64_t start = 0, end = 0;
@@ -944,9 +947,10 @@ static void __status_machine_handle(struct app_voice_interaction *p_vi)
             __arm_chat_flush();   // ARIA: a turn finished -> (re)arm the chat-log flush
             // No need for break
         }
-        case VI_STATUS_STOP: 
+        case VI_STATUS_STOP:
         {
             ESP_LOGI(TAG, "VI_STATUS_STOP");
+            aria_tone_stop();   // ARIA: ensure the thinking tone is stopped
             esp_http_client_handle_t client = p_vi->client;
 
             // No need to turn off RGB, UI will set blue flashing.
@@ -992,6 +996,7 @@ static void __status_machine_handle(struct app_voice_interaction *p_vi)
         }
         case VI_STATUS_ERROR: {
             ESP_LOGI(TAG, "VI_STATUS_ERROR");
+            aria_tone_stop();   // ARIA: ensure the thinking tone is stopped
             app_rgb_set(SR, RGB_OFF);
             esp_http_client_handle_t client = p_vi->client;
             if( p_vi->need_delete_client && client != NULL) {

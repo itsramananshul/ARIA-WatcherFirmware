@@ -672,10 +672,13 @@ static void __view_event_handler(void* handler_args, esp_event_base_t base, int3
             case VIEW_EVENT_VI_ANALYZING:{
                 ESP_LOGI(TAG, "event: VIEW_EVENT_VI_ANALYZING");
                 if(ota_st.status == 1){break;}
-                lv_obj_clear_flag(ui_p2texit, LV_OBJ_FLAG_HIDDEN);
+                // ARIA: no "click to exit" hint — touch no longer stops the chat;
+                // only the wheel press does. Keep the screen in the wheel group so
+                // the encoder press still reaches p2tclick_cb.
+                lv_obj_add_flag(ui_p2texit, LV_OBJ_FLAG_HIDDEN);
                 lv_obj_add_flag(push2talk_textarea, LV_OBJ_FLAG_HIDDEN);
                 lv_group_add_obj(g_main, ui_Page_Push2talk);
-                
+
                 emoji_switch_scr = SCREEN_PUSH2TALK;
                 emoji_timer(EMOJI_ANALYZING);
                 g_push2talk_status = EMOJI_ANALYZING;

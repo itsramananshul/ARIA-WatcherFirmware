@@ -19,6 +19,7 @@
 #include "app_voice_interaction.h"   // app_vi_session_is_running
 #include "app_recording.h"           // app_recording_start/stop
 #include "app_audio_recorder.h"      // ARIA: wake-word toggle setter
+#include "app_aria_tone.h"           // ARIA: thinking-tone select + cache
 #include "app_aria_cam.h"            // aria_cam_capture (take_photo)
 #include "app_audio_player.h"        // play WAV (speak)
 #include "factory_info.h"
@@ -102,6 +103,9 @@ static void apply_config(cJSON *config)
     // ARIA: hands-free wake word ("Sophia") — apply live (also persists to NVS).
     cJSON *ww = cJSON_GetObjectItem(config, "wake_word");
     if (ww) { app_audio_recorder_set_wakeword(cJSON_IsTrue(ww)); }
+    // ARIA: selected "thinking" tone — set + (re)download/cache the WAV.
+    cJSON *tn = cJSON_GetObjectItem(config, "tone");
+    if (tn && cJSON_IsString(tn) && tn->valuestring[0]) { aria_tone_apply(tn->valuestring); }
 
     s_applied_rev = cur_rev;
 }
@@ -334,6 +338,9 @@ static void sync_task(void *arg)
     while (1) {
         if (s_wifi_connected && !app_vi_session_is_running()) {
             sync_once();
+            // ARIA: make sure the selected thinking tone is cached on disk (no-op
+            // once cached; downloads after boot / when the selection changes).
+            aria_tone_ensure_cached();
             if (s_reboot_pending) {
                 // CRITICAL: report the reboot result FIRST (a second sync POSTs
                 // the pending {id,done} so the backend marks it done) — otherwise
