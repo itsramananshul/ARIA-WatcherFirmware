@@ -1,0 +1,16 @@
+## IDF Component Manager Manifest File
+dependencies:
+  idf: ">=5.0"
+  sscma_client:
+    override_path: "../../../components/sscma_client"
+  sensecap-watcher:
+    override_path: "../../../components/sensecap-watcher"
+  esp_io_expander_pca95xx_16bit:
+    override_path: "../../../components/esp_io_expander_pca95xx_16bit"
+  espressif/esp-sr: "1.7.1"
+  chmorgan/esp-audio-player: "1.0.6"
+  chmorgan/esp-file-iterator: "1.0.0"
+  esp_jpeg_simd: 
+    override_path: "../../../components/esp_jpeg_simd"
+  iperf:
+    path: ${IDF_PATH}/examples/common_components/iperf

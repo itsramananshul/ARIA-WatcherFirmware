@@ -1,0 +1,6 @@
+version: "1.0.0"
+description: ByteTrack Micro
+url: https://github.com/Seeed-Studio/SenseCAP-Watcher/tree/main/components/byte_track
+dependencies:
+  espressif/eigen: "^3.4.0~2"
+  idf: ">=4.4.2"

@@ -1,0 +1,7 @@
+## IDF Component Manager Manifest File
+dependencies:
+  idf: ">=5.0"
+  sensecap-watcher:
+    override_path: "../../../components/sensecap-watcher"
+
+  espressif/esp-sr: "1.7.1"

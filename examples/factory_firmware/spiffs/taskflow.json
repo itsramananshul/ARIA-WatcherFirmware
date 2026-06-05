@@ -1,0 +1,77 @@
+{
+    "tlid": 1,
+    "ctd": 1,
+    "tn": "Human Detection example",
+    "type": 0,
+    "task_flow": [
+        {
+            "id": 1,
+            "type": "ai camera",
+            "index": 0,
+            "version": "1.0.0",
+            "params": {
+                "model_type": 1,
+                "modes": 0,
+                "conditions": [
+                    {
+                        "class": "person",
+                        "mode": 1,
+                        "type": 2,
+                        "num": 0
+                    }
+                ],
+                "conditions_combo": 0,
+                "silent_period": {
+                    "silence_duration": 5
+                },
+                "output_type": 0,
+                "shutter": 0
+            },
+            "wires": [
+                [
+                    2
+                ]
+            ]
+        },
+        {
+            "id": 2,
+            "type": "alarm trigger",
+            "index": 1,
+            "version": "1.0.0",
+            "params": {
+                "text": "human detected",
+                "audio": ""
+            },
+            "wires": [
+                [
+                    3,
+                    4
+                ]
+            ]
+        },
+        {
+            "id": 3,
+            "type": "local alarm",
+            "index": 2,
+            "version": "1.0.0",
+            "params": {
+                "sound": 1,
+                "rgb": 1,
+                "img": 0,
+                "text": 0,
+                "duration": 5
+            },
+            "wires": []
+        },
+        {
+            "id": 4,
+            "type": "sensecraft alarm",
+            "index": 3,
+            "version": "1.0.0",
+            "params": {
+                "silence_duration": 30
+            },
+            "wires": []
+        }
+    ]
+}

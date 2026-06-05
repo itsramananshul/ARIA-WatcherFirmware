@@ -1,0 +1,53 @@
+menu "Factory Firmware Example Configuration"
+    config VOICE_ID
+        string "Speaker Id"
+        default "qiumum_0gushi"
+        help
+            speaker id from https://czyt.tech/post/a-free-tts-api/?from_wecom=1
+    config VOLUME_LEVEL
+        int "volume level"
+        default "90"
+        range 1 100
+        help
+            speaker volume
+    config ENABLE_FACTORY_FW_DEBUG_LOG
+        bool "Enable debug log level for this example project"
+        default "n"
+        help
+            Enable debug log level for this factory firmware example project
+
+    config SKIP_COMMON_NAME_CHECK
+        bool "Skip server certificate Common Name field check"
+        default n
+        help
+            This allows you to skip the validation of OTA server certificate CommonName field. But please don't enable this if the cert of your OTA server needs SNI support.
+
+    config ENABLE_TASKFLOW_FROM_SPIFFS
+        bool "Enable start taskflow from spiffs file"
+        default n
+        help
+            Enable start taskflow from spiffs file default file name is taskflow.json
+
+    config ENABLE_TEST_ENV
+        bool "Test Env"
+        default n
+        help
+            In test env, connects to test servers, enable test code snippets.
+
+    config INTR_TRACKING
+        bool "intr tracking"
+        default n
+        help
+            Enable intr tarcking.
+
+    config CAMERA_DISPLAY_MIRROR_X
+        bool "camera display mirror x"
+        default y
+        help
+            Enable camera display mirror x.
+    config ENABLE_VI_SR
+        bool "Enable wake-up word and VAD detection (experimental feature)"
+        default n
+        help
+            Enable wake-up word and VAD detection functions, SR is still an experimental feature .
+endmenu
