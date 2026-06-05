@@ -1378,24 +1378,13 @@ void sleepswitch_cb(lv_event_t * e)
 
 void p2tclick_cb(lv_event_t * e)
 {
-    if(g_push2talk_status == EMOJI_SPEAKING || g_push2talk_status == EMOJI_ANALYZING){
-        app_rgb_set(SR, RGB_BLINK_BLUE);
-        lv_arc_set_value(ui_push2talkarc, 0);
-
-        g_push2talk_timer = 1;
-        view_push2talk_timer_start();
-
-        lv_obj_clear_flag(ui_push2talkpanel2, LV_OBJ_FLAG_HIDDEN);
-        lv_obj_add_flag(ui_push2talkpanel3, LV_OBJ_FLAG_HIDDEN);
-        lv_obj_add_flag(ui_p2texit, LV_OBJ_FLAG_HIDDEN);
-        lv_obj_add_flag(push2talk_textarea, LV_OBJ_FLAG_HIDDEN);
-
-        lv_group_remove_all_objs(g_main);
-        lv_group_add_obj(g_main, ui_push2talkarc);
-
-        esp_event_post_to(app_event_loop_handle, VIEW_EVENT_BASE, VIEW_EVENT_VI_STOP, NULL, NULL, pdMS_TO_TICKS(10000));
-        view_push2talk_animation_timer_stop();
-    }
+    // ARIA root-cause fix: a stray tap on the small round screen (or the click
+    // that follows the wheel-release) used to post VIEW_EVENT_VI_STOP here, which
+    // tore down the in-flight audio upload mid-stream -> "esp_http_client_write
+    // failed" and the whole turn errored out ("wheel-to-talk doesn't work").
+    // A click must NEVER interrupt a talk session (you exit by scrolling the
+    // wheel, which posts VI_EXIT elsewhere). So taps/clicks are a no-op now.
+    LV_UNUSED(e);
 }
 
 void push2talkcancel_cb(lv_event_t * e)
