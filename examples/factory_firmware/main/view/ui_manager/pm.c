@@ -123,7 +123,7 @@ static void lv_pm_obj_group(lv_group_t * group, GroupInfo *groupInfo)
 void initGroup()
 {
     // define objects array
-    lv_obj_t * main_objects[]           = {ui_mainbtn1, ui_mainbtn2, ui_mainbtn3, ui_mainbtn4};
+    lv_obj_t * main_objects[]           = {ui_mainbtn1, ui_mainbtn2, ui_mainbtn3, ui_mainbtn4};   // ARIA: Recording + Chat + Extension + Settings
     lv_obj_t * template_objects[]       = {ui_menubtn1, ui_menubtn2, ui_menubtn3, ui_menubtn4};
     lv_obj_t * notask_objects[]         = {ui_curtask1b};
     lv_obj_t * extension_objects[]      = {ui_extensionbubble2, ui_extensionbubble3, ui_extensionbubble4};

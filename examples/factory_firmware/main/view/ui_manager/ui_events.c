@@ -7,6 +7,7 @@
 #include "event_loops.h"
 #include "esp_wifi.h"
 #include <dirent.h>
+#include <stdio.h>   // ARIA: snprintf for voice-picker label
 #include "esp_timer.h"
 
 #include "ui/ui.h"
@@ -510,39 +511,25 @@ void virb2c_cb(lv_event_t *e)
 void main1c_cb(lv_event_t *e)
 {
     ESP_LOGI(CLICK_TAG, "main1c_cb");
-    lv_pm_open_page(g_main, &group_page_template, PM_ADD_OBJS_TO_GROUP, &ui_Page_Example, LV_SCR_LOAD_ANIM_NONE, 0, 0, &ui_Page_Example_screen_init);
-    lv_group_focus_obj(ui_menubtn2);
+    ui_recording_open();   // ARIA: Recording tile -> voice recorder screen
 }
 
 void main1f_cb(lv_event_t *e)
 {
     lv_obj_set_y(ui_maintitle, 0);
-    lv_label_set_text(ui_maintitle, "Task\nTemplates");
+    lv_label_set_text(ui_maintitle, "Recording");
 }
 
 void main2c_cb(lv_event_t *e)
 {
     ESP_LOGI(CLICK_TAG, "main2c_cb");
-    if(g_taskdown == 1)
-    {
-        lv_pm_open_page(g_main, &group_page_notask, PM_ADD_OBJS_TO_GROUP, &ui_Page_Notask, LV_SCR_LOAD_ANIM_NONE, 0, 0, &ui_Page_Notask_screen_init);
-    }
-    if(g_taskdown == 0)
-    {
-        if(g_avarlive == 0)
-        {
-            if(lv_scr_act() != ui_Page_ViewAva)lv_pm_open_page(g_main, &group_page_view, PM_ADD_OBJS_TO_GROUP, &ui_Page_ViewAva, LV_SCR_LOAD_ANIM_NONE, 0, 0, &ui_Page_ViewAva_screen_init);
-        }else if(g_avarlive == 1)
-        {
-            if(lv_scr_act() != ui_Page_ViewLive)lv_pm_open_page(g_main, &group_page_view, PM_ADD_OBJS_TO_GROUP, &ui_Page_ViewLive, LV_SCR_LOAD_ANIM_NONE, 0, 0, &ui_Page_ViewLive_screen_init);
-        }
-    }
+    ui_chat_open();   // ARIA: Chat tile -> chat window (talk with the wheel; saved to GitHub)
 }
 
 void main2f_cb(lv_event_t *e)
 {
     lv_obj_set_y(ui_maintitle, 0);
-    lv_label_set_text(ui_maintitle, "Current\nTasks");
+    lv_label_set_text(ui_maintitle, "Chat");
 }
 
 void main3c_cb(lv_event_t *e)
@@ -1064,6 +1051,14 @@ void setbridf_cb(lv_event_t *e)
 void setwwf_cb(lv_event_t *e)
 {
     set_obj_style_focused(ui_setww, ui_setwwt);
+    // ARIA: reflect the saved TTS-engine setting on the switch when focused.
+    uint8_t eng = 0; size_t len = sizeof(eng);
+    char key[] = "aria_eng";
+    if (storage_read(key, &eng, &len) == ESP_OK && eng) {
+        lv_obj_add_state(ui_setwwsw, LV_STATE_CHECKED);
+    } else {
+        lv_obj_clear_state(ui_setwwsw, LV_STATE_CHECKED);
+    }
     lv_obj_clear_flag(ui_setwwsw, LV_OBJ_FLAG_HIDDEN);
 }
 
@@ -1131,25 +1126,24 @@ void setdevc_cb(lv_event_t *e)
 void setwific_cb(lv_event_t *e)
 {
     ESP_LOGI(CLICK_TAG, "setwific_cb");
-    current_wifi_get(&wifi_record);
+    // ARIA: open the on-device Wi-Fi scan/select screen and kick off a scan.
+    lv_pm_open_page(g_main, NULL, PM_CLEAR_GROUP, &ui_Page_WifiScan, LV_SCR_LOAD_ANIM_NONE, 0, 0, &ui_Page_WifiScan_screen_init);
+    ui_wifiscan_start();
+}
 
-    static char ssid_string[34];
-    if (strlen((const char *)wifi_record.ssid) < 1) {
-        strncpy(ssid_string, "None", sizeof(ssid_string) - 1);
-    } else {
-        strncpy(ssid_string, (const char *)wifi_record.ssid, sizeof(ssid_string) - 1);
-    }
-    ssid_string[sizeof(ssid_string) - 1] = '\0';
-    lv_label_set_text(ui_wifissid, ssid_string);
-    // binded
-    lv_pm_open_page(g_main, NULL, PM_CLEAR_GROUP, &ui_Page_Network, LV_SCR_LOAD_ANIM_NONE, 0, 0, &ui_Page_Network_screen_init);
-    lv_group_remove_all_objs(g_main);
-    lv_group_add_obj(g_main, ui_wificancel);
+// ARIA: a scanned network row was clicked -> open network connects, locked
+// network opens the wheel-keyboard password screen.
+void ui_event_wifiscan_row(lv_event_t *e)
+{
+    int idx = (int)(intptr_t)lv_event_get_user_data(e);
+    ui_wifiscan_row_selected(idx);
+}
 
-    lv_obj_clear_flag(ui_wifip1, LV_OBJ_FLAG_HIDDEN);
-    lv_obj_move_foreground(ui_wifiicon);
-
-    lv_obj_add_flag(ui_wifip3, LV_OBJ_FLAG_HIDDEN);
+// ARIA: back from the Wi-Fi scan screen to Settings.
+void ui_event_wifiscan_back(lv_event_t *e)
+{
+    ESP_LOGI(CLICK_TAG, "wifiscan back");
+    lv_pm_open_page(g_main, &group_page_set, PM_ADD_OBJS_TO_GROUP, &ui_Page_Set, LV_SCR_LOAD_ANIM_NONE, 0, 0, &ui_Page_Set_screen_init);
 }
 
 void setblec_cb(lv_event_t *e)
@@ -1211,22 +1205,19 @@ void setrgbc_cb(lv_event_t *e)
 void setwwc_cb(lv_event_t *e)
 {
     ESP_LOGI(CLICK_TAG, "setwwc_cb");
-    static lv_state_t btn_state;
-    btn_state = lv_obj_get_state(ui_setwwsw);
-    switch (btn_state)
-    {
-        case 0:
-            lv_obj_add_state(ui_setwwsw, LV_STATE_CHECKED);
-
-            break;
-        case 1:
-            lv_obj_clear_state(ui_setwwsw, LV_STATE_CHECKED);
-
-            break;
-
-        default:
-            break;
+    // ARIA: repurposed Wake-Word switch as the TTS engine toggle.
+    // checked = Fast (Gemini Live -> x-aria-engine:live); unchecked = Current.
+    uint8_t eng;
+    if (lv_obj_has_state(ui_setwwsw, LV_STATE_CHECKED)) {
+        lv_obj_clear_state(ui_setwwsw, LV_STATE_CHECKED);
+        eng = 0;
+    } else {
+        lv_obj_add_state(ui_setwwsw, LV_STATE_CHECKED);
+        eng = 1;
     }
+    char key[] = "aria_eng";
+    storage_write(key, &eng, sizeof(eng));
+    ESP_LOGI(CLICK_TAG, "ARIA engine -> %s", eng ? "fast(live)" : "current");
 }
 
 void setdownc_cb(lv_event_t *e)
@@ -1249,9 +1240,19 @@ void setfac_cb(lv_event_t *e)
     lv_group_add_obj(g_main, ui_spback);
 }
 
+static const char *kAriaVoices[] = {"Kore", "Sulafat", "Despina", "Leda"};
+
 void setappf_cb(lv_event_t *e)
 {
     set_obj_style_focused(ui_setapp, ui_setappt);
+    // ARIA: reflect the saved voice on the label when focused.
+    uint8_t v = 0; size_t vlen = sizeof(v);
+    char vkey[] = "aria_voice";
+    storage_read(vkey, &v, &vlen);
+    if (v > 3) v = 0;
+    char vbuf[24];
+    snprintf(vbuf, sizeof(vbuf), "Voice: %s", kAriaVoices[v]);
+    lv_label_set_text(ui_setappt, vbuf);
 }
 
 void setappdf_cb(lv_event_t *e)
@@ -1262,8 +1263,17 @@ void setappdf_cb(lv_event_t *e)
 void setappc_cb(lv_event_t *e)
 {
     ESP_LOGI(CLICK_TAG, "setappc_cb");
-    lv_pm_open_page(g_main, &group_page_connectapp, PM_ADD_OBJS_TO_GROUP, &ui_Page_Connect, LV_SCR_LOAD_ANIM_NONE, 0, 0, &ui_Page_Connect_screen_init);
-    lv_group_focus_obj(ui_connp1);
+    // ARIA: repurposed "Connect App" row as the TTS voice picker (cycles Kore -> Sulafat -> Despina -> Leda).
+    uint8_t v = 0; size_t vlen = sizeof(v);
+    char vkey[] = "aria_voice";
+    storage_read(vkey, &v, &vlen);
+    if (v > 3) v = 0;
+    v = (uint8_t)((v + 1) % 4);
+    storage_write(vkey, &v, sizeof(v));
+    char vbuf[24];
+    snprintf(vbuf, sizeof(vbuf), "Voice: %s", kAriaVoices[v]);
+    lv_label_set_text(ui_setappt, vbuf);
+    ESP_LOGI(CLICK_TAG, "ARIA voice -> %s", kAriaVoices[v]);
 }
 
 void slidervc_cb(lv_event_t *e)

@@ -34,6 +34,7 @@ void ui_Page_Home_screen_init(void)
     lv_obj_set_height(ui_mainlp1, 90);
     lv_obj_set_align(ui_mainlp1, LV_ALIGN_CENTER);
     lv_obj_clear_flag(ui_mainlp1, LV_OBJ_FLAG_SCROLLABLE);      /// Flags
+    lv_obj_clear_flag(ui_mainlp1, LV_OBJ_FLAG_HIDDEN);   // ARIA: repurposed as "Recording" tile
     lv_obj_set_style_bg_color(ui_mainlp1, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_opa(ui_mainlp1, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_border_color(ui_mainlp1, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -47,17 +48,17 @@ void ui_Page_Home_screen_init(void)
     lv_obj_clear_flag(ui_mainbtn1, LV_OBJ_FLAG_SCROLLABLE);      /// Flags
     lv_obj_set_style_bg_color(ui_mainbtn1, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_opa(ui_mainbtn1, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_img_src(ui_mainbtn1, &ui_img_task_template_png, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_img_src(ui_mainbtn1, &ui_img_aria_rec_png, LV_PART_MAIN | LV_STATE_DEFAULT);   // ARIA: mic icon
     lv_obj_set_style_outline_color(ui_mainbtn1, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_outline_opa(ui_mainbtn1, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_shadow_color(ui_mainbtn1, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_shadow_opa(ui_mainbtn1, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_color(ui_mainbtn1, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_CHECKED);
     lv_obj_set_style_bg_opa(ui_mainbtn1, 0, LV_PART_MAIN | LV_STATE_CHECKED);
-    lv_obj_set_style_bg_img_src(ui_mainbtn1, &ui_img_1415499115, LV_PART_MAIN | LV_STATE_CHECKED);
+    lv_obj_set_style_bg_img_src(ui_mainbtn1, &ui_img_aria_rec_png, LV_PART_MAIN | LV_STATE_CHECKED);
     lv_obj_set_style_bg_color(ui_mainbtn1, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_FOCUSED);
     lv_obj_set_style_bg_opa(ui_mainbtn1, 0, LV_PART_MAIN | LV_STATE_FOCUSED);
-    lv_obj_set_style_bg_img_src(ui_mainbtn1, &ui_img_1415499115, LV_PART_MAIN | LV_STATE_FOCUSED);
+    lv_obj_set_style_bg_img_src(ui_mainbtn1, &ui_img_aria_rec_png, LV_PART_MAIN | LV_STATE_FOCUSED);
     lv_obj_set_style_border_color(ui_mainbtn1, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_FOCUSED);
     lv_obj_set_style_border_opa(ui_mainbtn1, 0, LV_PART_MAIN | LV_STATE_FOCUSED);
     lv_obj_set_style_outline_width(ui_mainbtn1, 0, LV_PART_MAIN | LV_STATE_FOCUSED);
@@ -72,6 +73,7 @@ void ui_Page_Home_screen_init(void)
     lv_obj_set_height(ui_mainlp2, 90);
     lv_obj_set_align(ui_mainlp2, LV_ALIGN_CENTER);
     lv_obj_clear_flag(ui_mainlp2, LV_OBJ_FLAG_SCROLLABLE);      /// Flags
+    lv_obj_clear_flag(ui_mainlp2, LV_OBJ_FLAG_HIDDEN);   // ARIA: repurposed as "Chat" tile
     lv_obj_set_style_bg_color(ui_mainlp2, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_opa(ui_mainlp2, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_border_color(ui_mainlp2, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -85,19 +87,19 @@ void ui_Page_Home_screen_init(void)
     lv_obj_clear_flag(ui_mainbtn2, LV_OBJ_FLAG_SCROLLABLE);      /// Flags
     lv_obj_set_style_bg_color(ui_mainbtn2, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_opa(ui_mainbtn2, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_img_src(ui_mainbtn2, &ui_img_currenttask_png, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_img_src(ui_mainbtn2, &ui_img_aria_chat_png, LV_PART_MAIN | LV_STATE_DEFAULT);   // ARIA: chat icon
     lv_obj_set_style_outline_color(ui_mainbtn2, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_outline_opa(ui_mainbtn2, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_shadow_color(ui_mainbtn2, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_shadow_opa(ui_mainbtn2, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_color(ui_mainbtn2, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_FOCUSED);
     lv_obj_set_style_bg_opa(ui_mainbtn2, 0, LV_PART_MAIN | LV_STATE_FOCUSED);
-    lv_obj_set_style_bg_img_src(ui_mainbtn2, &ui_img_1158392298, LV_PART_MAIN | LV_STATE_FOCUSED);
+    lv_obj_set_style_bg_img_src(ui_mainbtn2, &ui_img_aria_chat_png, LV_PART_MAIN | LV_STATE_FOCUSED);
     lv_obj_set_style_outline_width(ui_mainbtn2, 0, LV_PART_MAIN | LV_STATE_FOCUSED);
     lv_obj_set_style_outline_pad(ui_mainbtn2, 0, LV_PART_MAIN | LV_STATE_FOCUSED);
     lv_obj_set_style_shadow_color(ui_mainbtn2, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_FOCUSED);
     lv_obj_set_style_shadow_opa(ui_mainbtn2, 0, LV_PART_MAIN | LV_STATE_FOCUSED);
-    lv_obj_set_style_bg_img_src(ui_mainbtn2, &ui_img_1158392298, LV_PART_MAIN | LV_STATE_FOCUS_KEY);
+    lv_obj_set_style_bg_img_src(ui_mainbtn2, &ui_img_aria_chat_png, LV_PART_MAIN | LV_STATE_FOCUS_KEY);
     lv_obj_set_style_outline_width(ui_mainbtn2, 0, LV_PART_MAIN | LV_STATE_FOCUS_KEY);
     lv_obj_set_style_outline_pad(ui_mainbtn2, 0, LV_PART_MAIN | LV_STATE_FOCUS_KEY);
 

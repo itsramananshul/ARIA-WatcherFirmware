@@ -103,6 +103,41 @@ void ui_event_connp2(lv_event_t * e);
 extern lv_obj_t * ui_connp2;
 void ui_event_arrow2(lv_event_t * e);
 extern lv_obj_t * ui_arrow2;
+// SCREEN: ui_Page_Chat (ARIA: chat view -> WatcherChat logging)
+void ui_Page_Chat_screen_init(void);
+void ui_chat_open(void);
+extern lv_obj_t * ui_Page_Chat;
+extern lv_obj_t * ui_chat_back;
+
+// SCREEN: ui_Page_Recording (ARIA: voice recorder -> GitHub)
+void ui_Page_Recording_screen_init(void);
+void ui_recording_open(void);
+extern lv_obj_t * ui_Page_Recording;
+extern lv_obj_t * ui_rec_status;
+extern lv_obj_t * ui_rec_btn;
+extern lv_obj_t * ui_rec_btn_lbl;
+extern lv_obj_t * ui_rec_back;
+
+// SCREEN: ui_Page_WifiScan (ARIA: on-device wifi scan/select)
+void ui_Page_WifiScan_screen_init(void);
+void ui_wifiscan_start(void);
+void ui_event_wifiscan_row(lv_event_t * e);
+void ui_event_wifiscan_back(lv_event_t * e);
+extern lv_obj_t * ui_Page_WifiScan;
+extern lv_obj_t * ui_wifiscan_title;
+extern lv_obj_t * ui_wifiscan_list;
+extern lv_obj_t * ui_wifiscan_rows[8];
+extern lv_obj_t * ui_wifiscan_lbls[8];
+extern lv_obj_t * ui_wifiscan_back;
+void ui_wifiscan_row_selected(int idx);
+// SCREEN: ui_Page_WifiPwd (ARIA: wheel-keyboard password entry + connect)
+void ui_Page_WifiPwd_screen_init(void);
+void ui_wifipwd_open(const char * ssid);
+extern lv_obj_t * ui_Page_WifiPwd;
+extern lv_obj_t * ui_wifipwd_title;
+extern lv_obj_t * ui_wifipwd_ta;
+extern lv_obj_t * ui_wifipwd_kb;
+extern lv_obj_t * ui_wifipwd_status;
 // SCREEN: ui_Page_Network
 void ui_Page_Network_screen_init(void);
 extern lv_obj_t * ui_Page_Network;
@@ -448,6 +483,8 @@ LV_IMG_DECLARE(ui_img_battery_warn_png);    // assets/battery_warn.png
 LV_IMG_DECLARE(ui_img_logo_png);    // assets/logo.png
 LV_IMG_DECLARE(ui_img_start_smile_png);    // assets/start_smile.png
 LV_IMG_DECLARE(ui_img_page_main_png);    // assets/page_main.png
+LV_IMG_DECLARE(ui_img_aria_rec_png);    // ARIA: Recording menu mic icon
+LV_IMG_DECLARE(ui_img_aria_chat_png);    // ARIA: Chat menu speech-bubble icon
 LV_IMG_DECLARE(ui_img_task_template_png);    // assets/Task Template.png
 LV_IMG_DECLARE(ui_img_1415499115);    // assets/Task Template-.png
 LV_IMG_DECLARE(ui_img_currenttask_png);    // assets/currenttask.png

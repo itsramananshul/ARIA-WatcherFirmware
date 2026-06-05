@@ -80,6 +80,8 @@ struct app_voice_interaction {
     bool new_session;
     bool is_ota;
     bool use_local_svc;
+    bool pending_vision;            // ARIA: reply asked us to capture + POST a camera frame
+    char vision_question[192];      // ARIA: the question to answer once captured
 };
 
 esp_err_t app_voice_interaction_init(void);

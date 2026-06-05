@@ -22,6 +22,9 @@
 #include "tf.h"
 #include "app_ota.h"
 #include "app_ble.h"
+#include "storage.h"   // ARIA: read on-device TTS engine/voice setting
+#include "app_aria_cam.h"   // ARIA: on-demand Himax camera capture
+#include "app_recording.h"  // ARIA: app_chat_end_flush (chat-log flush)
 
 static const char *TAG = "vi";
 
@@ -350,9 +353,22 @@ static int __audio_stream_result_get(uint8_t *p_buf, size_t len,  struct view_da
 static int __audio_stream_http_connect(struct app_voice_interaction *p_vi)
 {
     esp_err_t  ret = ESP_OK;
-    ESP_LOGI(TAG, "URL: %s", p_vi->stream_url);
+    // ARIA: append the on-device "Fast Voice" engine choice as a query param,
+    // read fresh per request so a toggle takes effect immediately, and visible
+    // in the backend request logs (?engine=live|current).
+    uint8_t aria_eng = 0; size_t aria_eng_len = sizeof(aria_eng);
+    char aria_eng_key[] = "aria_eng";
+    storage_read(aria_eng_key, &aria_eng, &aria_eng_len);
+    uint8_t aria_v = 0; size_t aria_v_len = sizeof(aria_v);
+    char aria_v_key[] = "aria_voice";
+    storage_read(aria_v_key, &aria_v, &aria_v_len);
+    static const char *kAriaVoices[] = {"Kore", "Sulafat", "Despina", "Leda"};
+    if (aria_v > 3) aria_v = 0;
+    static char aria_stream_url[320];
+    snprintf(aria_stream_url, sizeof(aria_stream_url), "%s?engine=%s&voice=%s", p_vi->stream_url, aria_eng ? "live" : "current", kAriaVoices[aria_v]);
+    ESP_LOGI(TAG, "URL: %s", aria_stream_url);
     esp_http_client_config_t config = {
-        .url = p_vi->stream_url,
+        .url = aria_stream_url,
         .method = HTTP_METHOD_POST,
         .timeout_ms = 30000,
         .crt_bundle_attach = esp_crt_bundle_attach,
@@ -374,10 +390,101 @@ static int __audio_stream_http_connect(struct app_voice_interaction *p_vi)
         ESP_LOGI(TAG, "token: %s", token);
         esp_http_client_set_header(p_vi->client, "Authorization", token);
     }
+
     // when len=-1, will use transfer-encoding: chunked
     return esp_http_client_open(p_vi->client, -1);
 }
 
+
+// ARIA camera vision (step 2): the previous reply carried aria_action ==
+// "capture_vision", so grab a frame off the Himax and POST it to the backend's
+// /vision endpoint (sibling of /audio_stream). On success p_vi->client holds an
+// open request whose framed response is played by the normal ANALYZING/PLAYING
+// path, so ARIA answers in her own voice about what she sees.
+static int __vision_capture_and_post(struct app_voice_interaction *p_vi)
+{
+    // 1. Capture one JPEG (base64) from the camera co-processor.
+    char *b64 = NULL;
+    int b64_len = 0;
+    esp_err_t cret = aria_cam_capture(&b64, &b64_len, 8000);
+    if (cret != ESP_OK || b64 == NULL || b64_len <= 0) {
+        ESP_LOGE(TAG, "vision: capture failed (%s)", esp_err_to_name(cret));
+        if (b64) free(b64);
+        return ESP_FAIL;
+    }
+    ESP_LOGI(TAG, "vision: captured %d base64 chars", b64_len);
+
+    // 2. Close the previous (ack) request before reusing the client handle.
+    if (p_vi->need_delete_client && p_vi->client != NULL) {
+        esp_http_client_close(p_vi->client);
+        esp_http_client_cleanup(p_vi->client);
+        p_vi->client = NULL;
+        p_vi->need_delete_client = false;
+    }
+
+    // 3. Build the /vision URL from stream_url (.../audio_stream -> .../vision),
+    //    carrying the same engine + voice choice so the spoken reply matches.
+    uint8_t aria_eng = 0; size_t aria_eng_len = sizeof(aria_eng);
+    storage_read("aria_eng", &aria_eng, &aria_eng_len);
+    uint8_t aria_v = 0; size_t aria_v_len = sizeof(aria_v);
+    storage_read("aria_voice", &aria_v, &aria_v_len);
+    static const char *kAriaVoices[] = {"Kore", "Sulafat", "Despina", "Leda"};
+    if (aria_v > 3) aria_v = 0;
+
+    static char vision_base[256];
+    snprintf(vision_base, sizeof(vision_base), "%s", p_vi->stream_url);
+    char *tail = strstr(vision_base, "/audio_stream");
+    if (tail) {
+        strcpy(tail, "/vision");
+    }
+    static char vision_url[320];
+    snprintf(vision_url, sizeof(vision_url), "%s?engine=%s&voice=%s",
+             vision_base, aria_eng ? "live" : "current", kAriaVoices[aria_v]);
+    ESP_LOGI(TAG, "vision URL: %s", vision_url);
+
+    esp_http_client_config_t config = {
+        .url = vision_url,
+        .method = HTTP_METHOD_POST,
+        .timeout_ms = 30000,
+        .crt_bundle_attach = esp_crt_bundle_attach,
+    };
+    p_vi->client = esp_http_client_init(&config);
+    if (p_vi->client == NULL) {
+        ESP_LOGE(TAG, "vision: client init failed");
+        free(b64);
+        return ESP_FAIL;
+    }
+    p_vi->need_delete_client = true;
+
+    esp_http_client_set_header(p_vi->client, "Content-Type", "application/octet-stream");
+    esp_http_client_set_header(p_vi->client, "session-id", p_vi->session_id);
+    const char *eui = factory_info_eui_get();
+    if (eui) {
+        esp_http_client_set_header(p_vi->client, "API-OBITER-DEVICE-EUI", eui);
+    }
+    if (p_vi->token[0] != '\0') {
+        esp_http_client_set_header(p_vi->client, "Authorization", p_vi->token);
+    }
+    if (p_vi->vision_question[0] != '\0') {
+        esp_http_client_set_header(p_vi->client, "x-aria-question", p_vi->vision_question);
+    }
+
+    // 4. POST the base64 body (known length -> simple, non-chunked).
+    esp_err_t oret = esp_http_client_open(p_vi->client, b64_len);
+    if (oret != ESP_OK) {
+        ESP_LOGE(TAG, "vision: open failed (%s)", esp_err_to_name(oret));
+        free(b64);
+        return ESP_FAIL;
+    }
+    int wlen = esp_http_client_write(p_vi->client, b64, b64_len);
+    free(b64);
+    if (wlen != b64_len) {
+        ESP_LOGE(TAG, "vision: write %d/%d", wlen, b64_len);
+        return ESP_FAIL;
+    }
+    ESP_LOGI(TAG, "vision: posted %d bytes, awaiting description", wlen);
+    return ESP_OK;
+}
 
 // The conversation process is as follows:
 // 1. Long press to wake up
@@ -387,6 +494,25 @@ static int __audio_stream_http_connect(struct app_voice_interaction *p_vi)
 // 5. Extract task results, read audio, play audio,
 // 6. Single conversation ends, close connection
 // 7. Exit (resume task, clear session ID)
+// ARIA: debounced chat-log flush. Each completed voice turn (re)arms this timer;
+// when it fires (no further turns for the delay), ask the backend to commit the
+// conversation to GitHub. Delay matches the backend's 4-min conversation gap.
+#define CHAT_FLUSH_DELAY_US (240LL * 1000000)
+static esp_timer_handle_t s_chat_flush_timer = NULL;
+static void __chat_flush_timer_cb(void *arg)
+{
+    app_chat_end_flush();
+}
+static void __arm_chat_flush(void)
+{
+    if (s_chat_flush_timer == NULL) {
+        const esp_timer_create_args_t args = { .callback = __chat_flush_timer_cb, .name = "chat_flush" };
+        if (esp_timer_create(&args, &s_chat_flush_timer) != ESP_OK) return;
+    }
+    esp_timer_stop(s_chat_flush_timer);
+    esp_timer_start_once(s_chat_flush_timer, CHAT_FLUSH_DELAY_US);
+}
+
 static void __status_machine_handle(struct app_voice_interaction *p_vi)
 {
     esp_err_t  ret = ESP_OK;
@@ -677,7 +803,7 @@ static void __status_machine_handle(struct app_voice_interaction *p_vi)
             size_t chunk_len = AUDIO_PLAYER_RINGBUF_CHUNK_SIZE * 2; // TODO
             int content_length = p_vi->content_length;
             bool  first_start = true;
-            int   cache_len =  MIN( content_length/2, AUDIO_PLAYER_RINGBUF_CACHE_SIZE);
+            int   cache_len =  AUDIO_PLAYER_RINGBUF_CACHE_SIZE;  // ARIA: fixed startup buffer (chunked stream has no real total length)
             struct view_data_vi_result  result;
             int player_status = 0;
             size_t bin_offset  = 0;
@@ -687,6 +813,7 @@ static void __status_machine_handle(struct app_voice_interaction *p_vi)
             int play_chunk_time_ms = 0;
 
             memset(&result, 0, sizeof(result));
+            p_vi->pending_vision = false;   // ARIA: set true below if this reply asks for a capture
 
             char* recv_buf = (char *)psram_malloc(chunk_len);
             if (recv_buf == NULL) {
@@ -697,10 +824,10 @@ static void __status_machine_handle(struct app_voice_interaction *p_vi)
                 break;
             }   
 
-            esp_http_client_set_timeout_ms(client, 10000);
+            esp_http_client_set_timeout_ms(client, 30000);   // ARIA: tolerate model pauses mid-stream (was 10s -> premature cutoff)
             start = esp_timer_get_time();
             app_audio_player_stream_init(content_length);
-            while (read_total_len < content_length) {
+            while (!esp_http_client_is_complete_data_received(client)) {   // ARIA: drain the whole streamed/chunked response (no fixed Content-Length)
                 int64_t read_start= esp_timer_get_time();
                 read_len = esp_http_client_read(client, recv_buf, chunk_len);
                 int64_t read_end= esp_timer_get_time();
@@ -720,6 +847,15 @@ static void __status_machine_handle(struct app_voice_interaction *p_vi)
                         }
                         first_chunk = false; //TODO  maybe  first_chunk can't find result.
                         ret = __audio_stream_result_get((uint8_t *)recv_buf, read_len, &result, &p_bin_data, &bin_len);
+                        // ARIA: did the backend ask us to capture a camera frame?
+                        // Latch it now (before the result is handed to the view)
+                        // and act on it once this ack finishes playing.
+                        if (result.p_aria_action && strcmp(result.p_aria_action, "capture_vision") == 0) {
+                            p_vi->pending_vision = true;
+                            snprintf(p_vi->vision_question, sizeof(p_vi->vision_question), "%s",
+                                     result.p_vision_question ? result.p_vision_question : "");
+                            ESP_LOGI(TAG, "ARIA: capture_vision requested, q='%s'", p_vi->vision_question);
+                        }
                         if(  ret == ESP_OK  && bin_len != 0) {
                             ESP_LOGI(TAG, "audio len:%d", bin_len);
                             app_audio_player_stream_send((uint8_t *)p_bin_data, bin_len, pdMS_TO_TICKS(500));
@@ -730,7 +866,7 @@ static void __status_machine_handle(struct app_voice_interaction *p_vi)
                         play_chunk_time_ms = app_audio_player_stream_time_get(chunk_len) + 200;
                         ESP_LOGI(TAG, "play_chunk_time_ms:%d", play_chunk_time_ms);
                     } else {        
-                       app_audio_player_stream_send((uint8_t *)recv_buf, read_len, pdMS_TO_TICKS(play_chunk_time_ms)); 
+                       app_audio_player_stream_send((uint8_t *)recv_buf, read_len, pdMS_TO_TICKS(20000)); // ARIA: wait for ring-buffer space instead of DROPPING audio (was play_chunk_time_ms -> mid-message cutoff)
                     }
                 }
                 if(__is_need_stop(p_vi)) {
@@ -782,6 +918,19 @@ static void __status_machine_handle(struct app_voice_interaction *p_vi)
                 }
             }
 
+            // ARIA: the ack ("let me take a look") has finished playing. If this
+            // reply asked for a camera frame, capture + POST it now and loop back
+            // through ANALYZING/PLAYING to speak what she sees. On any failure we
+            // simply fall through to FINISH (she already acknowledged out loud).
+            if (p_vi->pending_vision && next_status == VI_STATUS_FINISH && !__is_need_stop(p_vi)) {
+                p_vi->pending_vision = false;
+                esp_event_post_to(app_event_loop_handle, VIEW_EVENT_BASE, \
+                            VIEW_EVENT_VI_ANALYZING, NULL, NULL, pdMS_TO_TICKS(10000));
+                if (__vision_capture_and_post(p_vi) == ESP_OK) {
+                    next_status = VI_STATUS_ANALYZING;
+                }
+            }
+
             p_vi->next_status = next_status;
             break;
         }
@@ -790,8 +939,9 @@ static void __status_machine_handle(struct app_voice_interaction *p_vi)
             ESP_LOGI(TAG, "VI_STATUS_FINISH");
             esp_event_post_to(app_event_loop_handle, VIEW_EVENT_BASE, \
                         VIEW_EVENT_VI_PLAY_FINISH, NULL, NULL, pdMS_TO_TICKS(10000));
-            
+
             app_rgb_set(SR, RGB_OFF);
+            __arm_chat_flush();   // ARIA: a turn finished -> (re)arm the chat-log flush
             // No need for break
         }
         case VI_STATUS_STOP: 
@@ -1237,6 +1387,17 @@ int app_vi_result_parse(const char *p_str, size_t len,
         p_ret->p_audio_text = strdup(p_screen_text->valuestring);
     }
 
+    // ARIA: optional camera-vision handshake fields (backend sends these when a
+    // reply asks the device to capture a frame; absent on normal replies).
+    cJSON *p_aria_action = cJSON_GetObjectItem(p_data, "aria_action");
+    if ( p_aria_action && cJSON_IsString(p_aria_action)) {
+        p_ret->p_aria_action = strdup(p_aria_action->valuestring);
+    }
+    cJSON *p_vision_question = cJSON_GetObjectItem(p_data, "vision_question");
+    if ( p_vision_question && cJSON_IsString(p_vision_question)) {
+        p_ret->p_vision_question = strdup(p_vision_question->valuestring);
+    }
+
     cJSON *p_task_summary = cJSON_GetObjectItem(p_data, "task_summary");
     if ( p_task_summary && cJSON_IsObject(p_task_summary)) {
 
@@ -1326,6 +1487,15 @@ int app_vi_result_free(struct view_data_vi_result *p_ret)
             free(p_ret->items[i]);
             p_ret->items[i] = NULL;
         }
+    }
+
+    if (p_ret->p_aria_action) {
+        free(p_ret->p_aria_action);
+        p_ret->p_aria_action = NULL;
+    }
+    if (p_ret->p_vision_question) {
+        free(p_ret->p_vision_question);
+        p_ret->p_vision_question = NULL;
     }
     return 0;
 

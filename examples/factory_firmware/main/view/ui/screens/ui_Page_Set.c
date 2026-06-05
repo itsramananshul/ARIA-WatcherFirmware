@@ -117,7 +117,7 @@ void ui_Page_Set_screen_init(void)
     lv_obj_set_x(ui_setappt, 50);
     lv_obj_set_y(ui_setappt, 0);
     lv_obj_set_align(ui_setappt, LV_ALIGN_LEFT_MID);
-    lv_label_set_text(ui_setappt, "Connect App");
+    lv_label_set_text(ui_setappt, "Voice: Kore");
     lv_obj_set_style_text_color(ui_setappt, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_opa(ui_setappt, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_font(ui_setappt, &lv_font_montserrat_24, LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -332,7 +332,7 @@ void ui_Page_Set_screen_init(void)
     lv_obj_set_width(ui_setww, 412);
     lv_obj_set_height(ui_setww, 50);
     lv_obj_set_align(ui_setww, LV_ALIGN_CENTER);
-    lv_obj_add_flag(ui_setww, LV_OBJ_FLAG_HIDDEN | LV_OBJ_FLAG_SCROLL_ON_FOCUS);     /// Flags
+    lv_obj_add_flag(ui_setww, LV_OBJ_FLAG_SCROLL_ON_FOCUS);     // ARIA: unhidden, repurposed as "Fast Voice" engine toggle
     lv_obj_clear_flag(ui_setww, LV_OBJ_FLAG_SCROLLABLE);      /// Flags
     lv_obj_set_style_radius(ui_setww, 45, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_color(ui_setww, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -350,7 +350,7 @@ void ui_Page_Set_screen_init(void)
     lv_obj_set_x(ui_setwwt, 50);
     lv_obj_set_y(ui_setwwt, 0);
     lv_obj_set_align(ui_setwwt, LV_ALIGN_LEFT_MID);
-    lv_label_set_text(ui_setwwt, "Wake Word");
+    lv_label_set_text(ui_setwwt, "Fast Voice");
     lv_obj_set_style_text_color(ui_setwwt, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_opa(ui_setwwt, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_font(ui_setwwt, &lv_font_montserrat_24, LV_PART_MAIN | LV_STATE_DEFAULT);

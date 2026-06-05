@@ -179,6 +179,8 @@ struct view_data_vi_result
     char *p_sst_text; // need free after use
     char *p_audio_text; // need free after use
     char *items[TASK_CFG_ID_MAX]; // need free after use, if empty, means no need to display
+    char *p_aria_action; // ARIA: optional action, e.g. "capture_vision"; need free after use
+    char *p_vision_question; // ARIA: question to answer after a vision capture; need free after use
 };
 
 struct view_data_sensor

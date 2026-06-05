@@ -31,6 +31,8 @@
 #include "app_taskflow.h"
 #include "view.h"
 #include "app_sensor.h"
+#include "app_aria_cam.h"
+#include "app_recording.h"
 
 #include "app_audio_player.h"
 #include "app_audio_recorder.h"
@@ -181,6 +183,8 @@ void app_init(void)
     app_ble_init();
     app_cmd_init();
     app_sensor_init();
+    app_aria_cam_init();
+    app_recording_init();
 }
 
 void task_app_init(void *p_arg)
