@@ -255,6 +255,19 @@ static char *build_body(void)
     cJSON_AddStringToObject(rep, "fw", desc ? desc->version : "aria");
     cJSON_AddNumberToObject(rep, "applied_rev", (double)s_applied_rev);
     cJSON_AddNumberToObject(rep, "free_heap", (double)esp_get_free_heap_size());
+
+    // ARIA: report the watch's CURRENT settings so on-device changes (engine on
+    // the Chat screen, voice/wake-word in Settings) reflect back on the web.
+    uint8_t v = 0; size_t l = sizeof(v);
+    v = 0; l = sizeof(v); storage_read("aria_eng", &v, &l);
+    cJSON_AddStringToObject(rep, "tts_engine", v ? "live" : "current");
+    uint8_t vidx = 0; l = sizeof(vidx); storage_read("aria_voice", &vidx, &l);
+    if (vidx > 3) vidx = 0;
+    cJSON_AddStringToObject(rep, "voice", kAriaVoices[vidx]);
+    uint8_t ww = 1; l = sizeof(ww);
+    if (storage_read("aria_ww_en", &ww, &l) != ESP_OK) ww = 1;
+    cJSON_AddBoolToObject(rep, "wake_word", ww != 0);
+
     cJSON_AddItemToObject(root, "reported", rep);
 
     if (s_nresults > 0) {
