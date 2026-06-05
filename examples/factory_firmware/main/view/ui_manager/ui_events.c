@@ -1389,7 +1389,12 @@ void p2tclick_cb(lv_event_t * e)
     if (p2t_indev && lv_indev_get_type(p2t_indev) != LV_INDEV_TYPE_ENCODER) {
         return;   // stray touchscreen tap -> ignore (never interrupt a turn)
     }
-    if(g_push2talk_status == EMOJI_SPEAKING || g_push2talk_status == EMOJI_ANALYZING){
+    // CRITICAL: do NOT act during ANALYZING. Letting go of the wheel after talking
+    // generates a click that lands exactly in ANALYZING (the audio upload); posting
+    // VI_STOP there tears down the TLS socket mid-send -> "esp_http_client_write
+    // failed" EVERY turn. Only allow stop/exit while she's SPEAKING (her reply),
+    // which is also when you'd want to exit.
+    if(g_push2talk_status == EMOJI_SPEAKING){
         app_rgb_set(SR, RGB_BLINK_BLUE);
         lv_arc_set_value(ui_push2talkarc, 0);
 
