@@ -727,6 +727,13 @@ int app_wifi_init(void)
     ESP_LOGI(TAG, "esp_wifi_init:%d, %s", ret, esp_err_to_name(ret));
     ESP_ERROR_CHECK(ret);
 
+    // ARIA: keep WiFi fully awake (no modem power-save). The default
+    // WIFI_PS_MIN_MODEM lets the modem doze between beacons when the watch is
+    // idle, which stalled the 15s device_sync poll -> reminders/speak commands
+    // only landed when the watch was next used. NONE keeps it polling while
+    // idle so reminders ring within ~15s. (Costs more battery when idle.)
+    esp_wifi_set_ps(WIFI_PS_NONE);
+
     esp_event_handler_instance_t instance_any_id;
     esp_event_handler_instance_t instance_got_ip;
     ESP_ERROR_CHECK(esp_event_handler_instance_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &__wifi_event_handler, 0, &instance_any_id));
