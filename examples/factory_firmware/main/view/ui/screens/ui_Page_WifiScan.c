@@ -37,6 +37,8 @@ lv_obj_t *ui_wifiscan_list;
 lv_obj_t *ui_wifiscan_rows[WIFISCAN_ROWS];
 lv_obj_t *ui_wifiscan_lbls[WIFISCAN_ROWS];
 lv_obj_t *ui_wifiscan_back;
+lv_obj_t *ui_wifiscan_awake;       // ARIA: WiFi keep-awake toggle (battery vs idle reminders)
+lv_obj_t *ui_wifiscan_awake_lbl;
 
 static lv_timer_t *s_scan_timer = NULL;
 static bool s_scanning = false;
@@ -78,6 +80,21 @@ static void wifi_saved_add(const char *ssid, const char *pw)
     storage_write(key, s_saved, sizeof(s_saved));
 }
 
+// ARIA: WiFi keep-awake toggle. ON = WiFi stays awake so reminders/speak ring
+// on the watch within ~15s even while idle (more battery). OFF = battery saver.
+static void awake_update_label(void)
+{
+    if (ui_wifiscan_awake_lbl)
+        lv_label_set_text(ui_wifiscan_awake_lbl,
+            aria_wifi_awake_enabled() ? LV_SYMBOL_REFRESH "  WiFi awake: ON" : LV_SYMBOL_REFRESH "  WiFi awake: OFF");
+}
+static void __awake_cb(lv_event_t *e)
+{
+    LV_UNUSED(e);
+    aria_wifi_set_awake(!aria_wifi_awake_enabled());   // flip + apply live + persist
+    awake_update_label();
+}
+
 static void __render_results(void)
 {
     int n = wifiStack_scanned.size;
@@ -99,6 +116,7 @@ static void __render_results(void)
         }
     }
     lv_group_add_obj(g_main, ui_wifiscan_back);
+    lv_group_add_obj(g_main, ui_wifiscan_awake);
     lv_label_set_text(ui_wifiscan_title, focus_first >= 0 ? "Wi-Fi" : "No networks");
     lv_group_focus_obj(focus_first >= 0 ? ui_wifiscan_rows[focus_first] : ui_wifiscan_back);
 }
@@ -132,8 +150,10 @@ void ui_wifiscan_start(void)
     wifi_saved_load();   // Stage 2: know which networks we've saved
     for (int i = 0; i < WIFISCAN_ROWS; i++) lv_obj_add_flag(ui_wifiscan_rows[i], LV_OBJ_FLAG_HIDDEN);
     lv_label_set_text(ui_wifiscan_title, "Scanning...");
+    awake_update_label();
     lv_group_remove_all_objs(g_main);
     lv_group_add_obj(g_main, ui_wifiscan_back);
+    lv_group_add_obj(g_main, ui_wifiscan_awake);
     lv_group_focus_obj(ui_wifiscan_back);
 
     // drain any stale completion signal, then kick a fresh scan
@@ -174,6 +194,23 @@ void ui_Page_WifiScan_screen_init(void)
     lv_obj_set_style_bg_opa(ui_wifiscan_list, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_border_opa(ui_wifiscan_list, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_pad_row(ui_wifiscan_list, 8, LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    // ARIA: WiFi keep-awake toggle — first item in the list (always present).
+    ui_wifiscan_awake = lv_btn_create(ui_wifiscan_list);
+    lv_obj_set_width(ui_wifiscan_awake, 360);
+    lv_obj_set_height(ui_wifiscan_awake, 48);
+    lv_obj_add_flag(ui_wifiscan_awake, LV_OBJ_FLAG_SCROLL_ON_FOCUS);
+    lv_obj_set_style_radius(ui_wifiscan_awake, 12, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_color(ui_wifiscan_awake, lv_color_hex(0x14361F), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(ui_wifiscan_awake, 220, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_color(ui_wifiscan_awake, lv_color_hex(0x8FC31F), LV_PART_MAIN | LV_STATE_FOCUSED);
+    lv_obj_set_style_bg_opa(ui_wifiscan_awake, 220, LV_PART_MAIN | LV_STATE_FOCUSED);
+    ui_wifiscan_awake_lbl = lv_label_create(ui_wifiscan_awake);
+    lv_obj_set_align(ui_wifiscan_awake_lbl, LV_ALIGN_LEFT_MID);
+    lv_obj_set_style_text_color(ui_wifiscan_awake_lbl, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(ui_wifiscan_awake_lbl, &lv_font_montserrat_24, LV_PART_MAIN | LV_STATE_DEFAULT);
+    awake_update_label();
+    lv_obj_add_event_cb(ui_wifiscan_awake, __awake_cb, LV_EVENT_CLICKED, NULL);
 
     for (int i = 0; i < WIFISCAN_ROWS; i++) {
         lv_obj_t *row = lv_btn_create(ui_wifiscan_list);

@@ -39,6 +39,12 @@ int app_wifi_init(void);
 void wifi_scan(void);
 void current_wifi_get(wifi_ap_record_t *p_st);
 
+// ARIA: WiFi keep-awake toggle (Settings -> Wi-Fi). awake=true -> WIFI_PS_NONE
+// (idle reminders ring, more battery); false -> WIFI_PS_MIN_MODEM (battery saver).
+bool aria_wifi_awake_enabled(void);
+void aria_wifi_apply_ps(void);
+void aria_wifi_set_awake(bool on);
+
 const char *print_auth_mode(int authmode);
 
 #ifdef __cplusplus

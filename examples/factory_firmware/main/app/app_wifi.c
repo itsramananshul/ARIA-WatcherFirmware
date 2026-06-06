@@ -24,6 +24,7 @@
 #include "event_loops.h"
 #include "at_cmd.h"
 #include "util.h"
+#include "storage.h"   // ARIA: NVS for the WiFi keep-awake toggle
 
 #define WIFI_CONFIG_ENTRY_STACK_SIZE 10240
 #define WIFI_CONNECTED_BIT           BIT0
@@ -703,6 +704,33 @@ void app_wifi_config_entry_init()
         wifi_task_stack = NULL;
     }
 }
+/*----------------------------- ARIA: WiFi keep-awake toggle -----------------------------*/
+// NVS "aria_wifi_awk": 1 = keep WiFi awake (WIFI_PS_NONE, default) so device_sync
+// keeps polling while idle (reminders/speak ring within ~15s; more battery);
+// 0 = battery saver (WIFI_PS_MIN_MODEM, modem dozes when idle). Applied at boot
+// (aria_wifi_apply_ps) and live when toggled in Settings -> Wi-Fi.
+bool aria_wifi_awake_enabled(void)
+{
+    uint8_t v = 1; size_t l = sizeof(v);
+    if (storage_read("aria_wifi_awk", &v, &l) != ESP_OK) v = 1;
+    return v != 0;
+}
+
+void aria_wifi_apply_ps(void)
+{
+    bool on = aria_wifi_awake_enabled();
+    esp_wifi_set_ps(on ? WIFI_PS_NONE : WIFI_PS_MIN_MODEM);
+    ESP_LOGI(TAG, "wifi power-save: %s", on ? "NONE (always awake)" : "MIN_MODEM (saver)");
+}
+
+void aria_wifi_set_awake(bool on)
+{
+    uint8_t v = on ? 1 : 0;
+    storage_write("aria_wifi_awk", &v, sizeof(v));
+    esp_wifi_set_ps(on ? WIFI_PS_NONE : WIFI_PS_MIN_MODEM);
+    ESP_LOGI(TAG, "wifi awake -> %s", on ? "always" : "saver");
+}
+
 int app_wifi_init(void)
 {
     __g_wifi_mutex = xSemaphoreCreateMutex();
@@ -727,12 +755,12 @@ int app_wifi_init(void)
     ESP_LOGI(TAG, "esp_wifi_init:%d, %s", ret, esp_err_to_name(ret));
     ESP_ERROR_CHECK(ret);
 
-    // ARIA: keep WiFi fully awake (no modem power-save). The default
-    // WIFI_PS_MIN_MODEM lets the modem doze between beacons when the watch is
-    // idle, which stalled the 15s device_sync poll -> reminders/speak commands
-    // only landed when the watch was next used. NONE keeps it polling while
-    // idle so reminders ring within ~15s. (Costs more battery when idle.)
-    esp_wifi_set_ps(WIFI_PS_NONE);
+    // ARIA: WiFi power-save mode is user-selectable (Settings -> Wi-Fi toggle),
+    // persisted in NVS "aria_wifi_awk" (default ON = keep awake). ON (WIFI_PS_NONE)
+    // keeps WiFi awake so the 15s device_sync poll runs while idle -> reminders/
+    // speak ring within ~15s (more battery). OFF (WIFI_PS_MIN_MODEM) = battery
+    // saver: the modem dozes when idle, so idle reminders only arrive on next use.
+    aria_wifi_apply_ps();
 
     esp_event_handler_instance_t instance_any_id;
     esp_event_handler_instance_t instance_got_ip;
