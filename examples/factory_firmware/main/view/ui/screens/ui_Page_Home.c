@@ -171,6 +171,34 @@ void ui_Page_Home_screen_init(void)
     lv_obj_set_style_outline_width(ui_mainbtn4, 0, LV_PART_MAIN | LV_STATE_FOCUS_KEY);
     lv_obj_set_style_outline_pad(ui_mainbtn4, 0, LV_PART_MAIN | LV_STATE_FOCUS_KEY);
 
+    // ARIA: 5th home tile — WiFi keep-awake toggle (a main-menu option, NOT inside
+    // the Settings menu). Self-toggling: click flips it, the state shows in the title.
+    ui_mainlp5 = lv_obj_create(ui_mainlist);
+    lv_obj_set_width(ui_mainlp5, 90);
+    lv_obj_set_height(ui_mainlp5, 90);
+    lv_obj_set_align(ui_mainlp5, LV_ALIGN_LEFT_MID);
+    lv_obj_clear_flag(ui_mainlp5, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_set_style_bg_opa(ui_mainlp5, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_border_opa(ui_mainlp5, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    ui_mainbtn5 = lv_btn_create(ui_mainlp5);
+    lv_obj_set_width(ui_mainbtn5, 80);
+    lv_obj_set_height(ui_mainbtn5, 80);
+    lv_obj_set_align(ui_mainbtn5, LV_ALIGN_CENTER);
+    lv_obj_add_flag(ui_mainbtn5, LV_OBJ_FLAG_SCROLL_ON_FOCUS);
+    lv_obj_clear_flag(ui_mainbtn5, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_set_style_radius(ui_mainbtn5, 40, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_color(ui_mainbtn5, lv_color_hex(0x14361F), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(ui_mainbtn5, 180, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_color(ui_mainbtn5, lv_color_hex(0x8FC31F), LV_PART_MAIN | LV_STATE_FOCUSED);
+    lv_obj_set_style_bg_opa(ui_mainbtn5, 230, LV_PART_MAIN | LV_STATE_FOCUSED);
+    lv_obj_t *ui_mainbtn5lbl = lv_label_create(ui_mainbtn5);
+    lv_label_set_text(ui_mainbtn5lbl, LV_SYMBOL_WIFI);
+    lv_obj_center(ui_mainbtn5lbl);
+    lv_obj_set_style_text_color(ui_mainbtn5lbl, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(ui_mainbtn5lbl, &lv_font_montserrat_24, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_add_event_cb(ui_mainbtn5, ui_event_mainbtn5, LV_EVENT_ALL, NULL);
+
     ui_maincontent = lv_obj_create(ui_Page_Home);
     lv_obj_set_width(ui_maincontent, 263);
     lv_obj_set_height(ui_maincontent, 240);

@@ -68,6 +68,9 @@ extern lv_obj_t * ui_mainbtn3;
 extern lv_obj_t * ui_mainlp4;
 void ui_event_mainbtn4(lv_event_t * e);
 extern lv_obj_t * ui_mainbtn4;
+extern lv_obj_t * ui_mainlp5;       // ARIA: WiFi keep-awake toggle tile
+void ui_event_mainbtn5(lv_event_t * e);
+extern lv_obj_t * ui_mainbtn5;
 extern lv_obj_t * ui_maincontent;
 extern lv_obj_t * ui_Devicep;
 extern lv_obj_t * ui_maintime;

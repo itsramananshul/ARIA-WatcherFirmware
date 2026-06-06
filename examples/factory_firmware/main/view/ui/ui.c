@@ -70,6 +70,9 @@ lv_obj_t * ui_mainbtn3;
 lv_obj_t * ui_mainlp4;
 void ui_event_mainbtn4(lv_event_t * e);
 lv_obj_t * ui_mainbtn4;
+lv_obj_t * ui_mainlp5;       // ARIA: WiFi keep-awake toggle tile
+void ui_event_mainbtn5(lv_event_t * e);
+lv_obj_t * ui_mainbtn5;
 lv_obj_t * ui_maincontent;
 lv_obj_t * ui_Devicep;
 lv_obj_t * ui_maintime;
@@ -884,6 +887,16 @@ void ui_event_mainbtn4(lv_event_t * e)
     }
     if(event_code == LV_EVENT_FOCUSED) {
         main4f_cb(e);
+    }
+}
+void ui_event_mainbtn5(lv_event_t * e)
+{
+    lv_event_code_t event_code = lv_event_get_code(e);
+    if(event_code == LV_EVENT_CLICKED) {
+        main5c_cb(e);
+    }
+    if(event_code == LV_EVENT_FOCUSED) {
+        main5f_cb(e);
     }
 }
 void ui_event_conncancel(lv_event_t * e)

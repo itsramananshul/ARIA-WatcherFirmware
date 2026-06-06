@@ -29,6 +29,8 @@ void main3c_cb(lv_event_t * e);
 void main3f_cb(lv_event_t * e);
 void main4c_cb(lv_event_t * e);
 void main4f_cb(lv_event_t * e);
+void main5c_cb(lv_event_t * e);   // ARIA: WiFi keep-awake toggle tile
+void main5f_cb(lv_event_t * e);
 void backset_cb(lv_event_t * e);
 void arr1c_cb(lv_event_t * e);
 void arr1f_cb(lv_event_t * e);

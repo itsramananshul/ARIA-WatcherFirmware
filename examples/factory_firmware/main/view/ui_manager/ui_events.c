@@ -566,6 +566,22 @@ void main4f_cb(lv_event_t *e)
     lv_label_set_text(ui_maintitle, "Setting");
 }
 
+// ARIA: WiFi keep-awake toggle tile. Focus shows the current state in the title;
+// click flips it (live + persisted via app_wifi). ON = idle reminders ring (more
+// battery), OFF = battery saver. No submenu — it's a direct main-menu toggle.
+void main5f_cb(lv_event_t *e)
+{
+    lv_obj_set_y(ui_maintitle, 20);
+    lv_label_set_text(ui_maintitle, aria_wifi_awake_enabled() ? "WiFi awake: ON" : "WiFi awake: OFF");
+}
+
+void main5c_cb(lv_event_t *e)
+{
+    ESP_LOGI(CLICK_TAG, "main5c_cb");
+    aria_wifi_set_awake(!aria_wifi_awake_enabled());
+    lv_label_set_text(ui_maintitle, aria_wifi_awake_enabled() ? "WiFi awake: ON" : "WiFi awake: OFF");
+}
+
 void backset_cb(lv_event_t * e)
 {
     // ESP_LOGI(CLICK_TAG, "backset_cb");
